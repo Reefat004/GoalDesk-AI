@@ -1,29 +1,29 @@
 from fastapi import FastAPI
 from app.database import Base, engine, SessionLocal
 from app.models import models
-from app.models.models import User
-from app.routes import goals
+from app.models.models import User, Goal, Task
+from app.routes import goals, tasks
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="GoalDesk AI API", version="0.0.1")
 
 app.include_router(goals.router)
+app.include_router(tasks.router)
+
+# def create_demo_user():
+#     db = SessionLocal()
+#     try:
+#         user = db.query(User).filter(User.id == 1).first()
+#         if not user:
+#             user = User(id=1, name="Demo User", email="demo@goaldesk.local")
+#             db.add(user)
+#             db.commit()
+#     finally:
+#         db.close()
 
 
-def create_demo_user():
-    db = SessionLocal()
-    try:
-        user = db.query(User).filter(User.id == 1).first()
-        if not user:
-            user = User(id=1, name="Demo User", email="demo@goaldesk.local")
-            db.add(user)
-            db.commit()
-    finally:
-        db.close()
-
-
-create_demo_user()
+# create_demo_user()
 
 
 @app.get("/")
