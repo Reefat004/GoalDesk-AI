@@ -752,6 +752,14 @@ Future hardware improvements:
 
 ---
 
+### 8.10 Technical Debt & Refactoring
+
+Once the backend and other core MVP features are fully set, the following technical debt should be addressed:
+* **ESLint Strict Rules**: Re-enable strict rules in `eslint.config.mjs` (such as `@typescript-eslint/no-explicit-any`, `react-hooks/exhaustive-deps`, and `react-hooks/set-state-in-effect`).
+* **Strict Typing**: Strictly type out all Next.js components to pass the linter. Remove any `any` types used during rapid MVP development.
+
+---
+
 ## 9. User Workflows
 
 ### 9.1 New User Onboarding Workflow

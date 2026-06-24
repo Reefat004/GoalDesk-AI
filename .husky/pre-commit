@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "Running pre-commit hooks..."
+
+cd frontend/goaldesk-web
+
+# Run lint-staged for ESLint on staged files
+echo "Running lint-staged..."
+npx lint-staged
+
+# Run Semgrep for security scans
+echo "Running Semgrep..."
+cd ../../
+semgrep scan --config auto .
