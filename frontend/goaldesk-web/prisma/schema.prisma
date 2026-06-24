@@ -1,0 +1,143 @@
+// GoalDesk AI — Prisma Schema
+// All models for the MVP: User, Goal, Task, CalendarBlock, FocusSession, Device, DeviceMessage, DeviceEvent
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ─── User ────────────────────────────────────────────────────────────────────
+// For MVP, a single demo user is seeded on first run.
+// planningRangeStart/End are customizable via the Settings page.
+model User {
+  id                 Int             @id @default(autoincrement())
+  name               String
+  email              String          @unique
+  planningRangeStart String          @default("09:00") // HH:mm 24h format
+  planningRangeEnd   String          @default("22:00") // HH:mm 24h format
+  createdAt          DateTime        @default(now())
+  goals              Goal[]
+  tasks              Task[]
+  calendarBlocks     CalendarBlock[]
+  focusSessions      FocusSession[]
+  devices            Device[]
+}
+
+// ─── Goal ────────────────────────────────────────────────────────────────────
+// A long-term goal the user wants to achieve (e.g. "Learn AI engineering").
+// Tasks are generated from goals by the AI/mock planner.
+model Goal {
+  id                 Int      @id @default(autoincrement())
+  userId             Int
+  title              String
+  category           String   // Learning, School, Career, Project, Wellness, Personal, Other
+  description        String?
+  deadline           DateTime
+  priority           String   // Low, Medium, High
+  preferredTimeOfDay String   // Morning, Afternoon, Evening, Night, Flexible
+  dailyMinutes       Int
+  status             String   @default("Active") // Active, Paused, Completed, Archived
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [userId], references: [id])
+  tasks              Task[]
+}
+
+// ─── Task ────────────────────────────────────────────────────────────────────
+// A small daily task generated from a goal. Can be scheduled into a time slot.
+model Task {
+  id               Int            @id @default(autoincrement())
+  userId           Int
+  goalId           Int
+  title            String
+  description      String?
+  estimatedMinutes Int
+  scheduledStart   DateTime?
+  scheduledEnd     DateTime?
+  priority         String         // Low, Medium, High
+  status           String         @default("Unscheduled") // Unscheduled, Scheduled, InProgress, Completed, Skipped
+  isAiGenerated    Boolean        @default(false)
+  isUserMoved      Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  user             User           @relation(fields: [userId], references: [id])
+  goal             Goal           @relation(fields: [goalId], references: [id])
+  focusSessions    FocusSession[]
+}
+
+// ─── CalendarBlock ───────────────────────────────────────────────────────────
+// A fixed time block representing an obligation (class, work, sleep, etc.).
+// Hard blocks cannot be moved by the scheduler.
+model CalendarBlock {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  title       String
+  blockType   String   // Class, Work, Meeting, Appointment, Sleep, Commute, Meal, Club, Other
+  startTime   DateTime
+  endTime     DateTime
+  recurrence  String   @default("None") // None, Weekly
+  isHardBlock Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+// ─── FocusSession ────────────────────────────────────────────────────────────
+// A timed work session for a specific task.
+model FocusSession {
+  id             Int       @id @default(autoincrement())
+  userId         Int
+  taskId         Int
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+  plannedMinutes Int
+  actualMinutes  Int?
+  status         String    @default("Active") // Active, Paused, Completed, Cancelled
+  createdAt      DateTime  @default(now())
+  user           User      @relation(fields: [userId], references: [id])
+  task           Task      @relation(fields: [taskId], references: [id])
+}
+
+// ─── Device ──────────────────────────────────────────────────────────────────
+// Represents a Particle Argon IoT device paired to a user.
+model Device {
+  id               Int             @id @default(autoincrement())
+  userId           Int
+  particleDeviceId String
+  name             String
+  status           String          @default("Offline") // Online, Offline
+  lastSeen         DateTime?
+  createdAt        DateTime        @default(now())
+  user             User            @relation(fields: [userId], references: [id])
+  messages         DeviceMessage[]
+  events           DeviceEvent[]
+}
+
+// ─── DeviceMessage ───────────────────────────────────────────────────────────
+// A message sent to the device's 16x2 LCD display.
+model DeviceMessage {
+  id          Int       @id @default(autoincrement())
+  deviceId    Int
+  line1       String    // Max 16 characters
+  line2       String    // Max 16 characters
+  messageType String   // task, focus, reminder, motivation, complete, test
+  status      String    @default("Pending") // Pending, Sent, Failed
+  sentAt      DateTime?
+  createdAt   DateTime  @default(now())
+  device      Device    @relation(fields: [deviceId], references: [id])
+}
+
+// ─── DeviceEvent ─────────────────────────────────────────────────────────────
+// An event received from the device (e.g. button press).
+model DeviceEvent {
+  id         Int      @id @default(autoincrement())
+  deviceId   Int
+  eventType  String   // button_press, status
+  payload    String?  // JSON string
+  receivedAt DateTime @default(now())
+  device     Device   @relation(fields: [deviceId], references: [id])
+}
